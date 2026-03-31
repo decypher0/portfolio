@@ -32,6 +32,41 @@ export default function ClientView({ profile, skills, experience, projects }: Cl
   const [time, setTime] = useState(0);
   const [size, setSize] = useState('0 B');
 
+  const [responseTab, setResponseTab] = useState<'raw' | 'visual'>('raw');
+  const [isDevMode, setIsDevMode] = useState(false);
+  const [reqTab, setReqTab] = useState<'Params' | 'Headers'>('Params');
+  
+  const activeConfig = endpoints.find(e => e.id === activeEndpoint);
+  
+  const [customUrl, setCustomUrl] = useState(`https://api.myportfolio.com${activeConfig?.path || ''}`);
+  
+  useEffect(() => {
+    if (!isDevMode) {
+      setCustomUrl(`https://api.myportfolio.com${activeConfig?.path || ''}`);
+    }
+  }, [activeEndpoint, activeConfig, isDevMode]);
+
+  const [queryParams, setQueryParams] = useState([{ key: '', value: '', desc: '' }]);
+  const [headers, setHeaders] = useState([{ key: '', value: '', desc: '' }]);
+
+  const handleParamChange = (index: number, field: string, val: string) => {
+    const newParams = [...queryParams];
+    newParams[index] = { ...newParams[index], [field]: val };
+    if (index === newParams.length - 1 && val !== '') {
+       newParams.push({ key: '', value: '', desc: '' });
+    }
+    setQueryParams(newParams);
+  };
+
+  const handleHeaderChange = (index: number, field: string, val: string) => {
+    const newHeaders = [...headers];
+    newHeaders[index] = { ...newHeaders[index], [field]: val };
+    if (index === newHeaders.length - 1 && val !== '') {
+       newHeaders.push({ key: '', value: '', desc: '' });
+    }
+    setHeaders(newHeaders);
+  };
+
   const getDataForEndpoint = (id: EndpointId) => {
     switch (id) {
       case 'profile': return profile;
@@ -42,12 +77,28 @@ export default function ClientView({ profile, skills, experience, projects }: Cl
     }
   };
 
+  const currentData = getDataForEndpoint(activeEndpoint);
+
   const handleSend = () => {
     if (flowStep !== 0) return;
     
-    setShowDiagram(true);
     setHasFetched(false);
+
+    if (isDevMode) {
+      setFlowStep(-1);
+      setTimeout(() => {
+        const data = getDataForEndpoint(activeEndpoint);
+        const bytes = new TextEncoder().encode(JSON.stringify(data)).length;
+        setSize(bytes > 1024 ? `${(bytes / 1024).toFixed(2)} KB` : `${bytes} B`);
+        setTime(Math.floor(Math.random() * 50) + 20); 
+        
+        setFlowStep(0);
+        setHasFetched(true);
+      }, 300);
+      return;
+    }
     
+    setShowDiagram(true);
     // Simulate Request Lifecycle
     setFlowStep(1); // Client Processing
     
@@ -105,8 +156,70 @@ export default function ClientView({ profile, skills, experience, projects }: Cl
     );
   };
 
-  const currentData = getDataForEndpoint(activeEndpoint);
-  const activeConfig = endpoints.find(e => e.id === activeEndpoint);
+  const renderVisualPreview = () => {
+    if (!currentData) return null;
+    
+    switch (activeEndpoint) {
+      case 'profile':
+        const p = currentData as Profile;
+        return (
+          <div style={{ padding: '1.5rem', fontFamily: 'var(--font-family)' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--text-heading)' }}>{p.summary}</h2>
+            <div style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>{p.email} | {p.phone}</div>
+            <div style={{ backgroundColor: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+              <h3 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Education Timeline</h3>
+              <p>{p.education}</p>
+            </div>
+          </div>
+        );
+      case 'skills':
+        const s = currentData as SkillCategory[];
+        return (
+          <div style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem', fontFamily: 'var(--font-family)' }}>
+             {s.map((cat, i) => (
+                <div key={i} style={{ backgroundColor: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <h3 style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--text-heading)' }}>{cat.category}</h3>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {cat.items.map(item => <span key={item} className="badge">{item}</span>)}
+                  </div>
+                </div>
+             ))}
+          </div>
+        );
+      case 'experience':
+        const exps = currentData as Experience[];
+        return (
+          <div style={{ padding: '1.5rem', fontFamily: 'var(--font-family)' }}>
+            {exps.map((exp, i) => (
+               <div key={i} style={{ marginBottom: '1.5rem', borderLeft: '2px solid var(--accent-color)', paddingLeft: '1rem' }}>
+                 <h3 style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--text-heading)' }}>{exp.role} <span style={{ color: 'var(--accent-color)' }}>@ {exp.company}</span></h3>
+                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>{exp.period}</div>
+                 <ul style={{ paddingLeft: '1.5rem', fontSize: '0.9rem', color: 'var(--text-main)', listStyleType: 'disc' }}>
+                   {exp.highlights.map((h, j) => <li key={j} style={{ marginBottom: '0.25rem' }}>{h}</li>)}
+                 </ul>
+               </div>
+            ))}
+          </div>
+        );
+      case 'projects':
+        const projs = currentData as Project[];
+        return (
+           <div style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', fontFamily: 'var(--font-family)' }}>
+             {projs.map((proj, i) => (
+                <div key={i} style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '8px' }}>
+                  <h3 style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--text-heading)' }}>{proj.title} {proj.date && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>({proj.date})</span>}</h3>
+                  <p style={{ fontSize: '0.9rem', marginBottom: '1rem', color: 'var(--text-main)' }}>{proj.description}</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                     {proj.techStack.map(t => <span key={t} className="badge" style={{ fontSize: '0.75rem' }}>{t}</span>)}
+                  </div>
+                </div>
+             ))}
+           </div>
+        );
+    }
+    return null;
+  };
+
   const isFetching = flowStep !== 0;
 
   const renderNode = (label: string, fStep: number, rStep: number, themeColor: string) => {
@@ -164,6 +277,32 @@ export default function ClientView({ profile, skills, experience, projects }: Cl
     );
   };
 
+  const renderEditableGrid = (data: {key: string, value: string, desc: string}[], handleChange: (i: number, f: string, v: string) => void) => {
+    return (
+      <div style={{ border: '1px solid var(--pm-border)', borderRadius: '4px', overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', borderBottom: '1px solid var(--pm-border)', backgroundColor: 'var(--pm-sidebar)' }}>
+          <div style={{ padding: '0.5rem', borderRight: '1px solid var(--pm-border)', color: 'var(--text-muted)' }}>Key</div>
+          <div style={{ padding: '0.5rem', borderRight: '1px solid var(--pm-border)', color: 'var(--text-muted)' }}>Value</div>
+          <div style={{ padding: '0.5rem', color: 'var(--text-muted)' }}>Description</div>
+        </div>
+        
+        {isDevMode ? data.map((item, index) => (
+          <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', borderBottom: index < data.length - 1 ? '1px solid var(--pm-border)' : 'none' }}>
+            <input placeholder="Key" value={item.key} onChange={(e) => handleChange(index, 'key', e.target.value)} style={{ padding: '0.5rem', border: 'none', borderRight: '1px solid var(--pm-border)', background: 'transparent', color: 'inherit', outline: 'none', width: '100%' }} />
+            <input placeholder="Value" value={item.value} onChange={(e) => handleChange(index, 'value', e.target.value)} style={{ padding: '0.5rem', border: 'none', borderRight: '1px solid var(--pm-border)', background: 'transparent', color: 'inherit', outline: 'none', width: '100%' }} />
+            <input placeholder="Description" value={item.desc} onChange={(e) => handleChange(index, 'desc', e.target.value)} style={{ padding: '0.5rem', border: 'none', background: 'transparent', color: 'inherit', outline: 'none', width: '100%' }} />
+          </div>
+        )) : (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr' }}>
+            <div style={{ padding: '0.5rem', borderRight: '1px solid var(--pm-border)', opacity: 0.5 }}>key</div>
+            <div style={{ padding: '0.5rem', borderRight: '1px solid var(--pm-border)', opacity: 0.5 }}>value</div>
+            <div style={{ padding: '0.5rem', opacity: 0.5 }}>Description</div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="flex w-full overflow-hidden text-sm font-sans" style={{ height: 'calc(100vh - 80px)', backgroundColor: 'var(--pm-workspace)', color: 'var(--pm-text)' }}>
       
@@ -214,19 +353,35 @@ export default function ClientView({ profile, skills, experience, projects }: Cl
       </aside>
 
       {/* Right Workspace */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto" style={{ backgroundColor: 'var(--pm-workspace)' }}>
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto" style={{ backgroundColor: 'var(--pm-workspace)', position: 'relative' }}>
         
-        {/* Top Area (URL & Send) */}
+        {/* Top Area (URL & Send text and Mode switch) */}
         <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--pm-border)' }}>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+             <h2 style={{ fontSize: '1.2rem', fontWeight: 600, margin: 0 }}>API Client</h2>
+             
+             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+               <span style={{ fontSize: '0.85rem', color: isDevMode ? 'var(--accent-color)' : 'var(--text-muted)', fontWeight: 600 }}>Developer Mode</span>
+               <div 
+                 onClick={() => setIsDevMode(!isDevMode)}
+                 style={{ width: '40px', height: '22px', backgroundColor: isDevMode ? 'var(--accent-color)' : 'var(--pm-border)', borderRadius: '12px', position: 'relative', cursor: 'pointer', transition: 'background 0.3s' }}
+               >
+                 <div style={{ width: '18px', height: '18px', backgroundColor: '#fff', borderRadius: '50%', position: 'absolute', top: '2px', left: isDevMode ? '20px' : '2px', transition: 'left 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
+               </div>
+             </div>
+          </div>
+
           <div style={{ display: 'flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--pm-border)', height: '40px' }}>
             <div style={{ display: 'flex', alignItems: 'center', padding: '0 1rem', backgroundColor: 'var(--pm-sidebar)', borderRight: '1px solid var(--pm-border)', fontWeight: 600, color: 'var(--pm-method)' }}>
               GET
             </div>
             <input 
                type="text" 
-               readOnly 
-               value={`https://api.myportfolio.com${activeConfig?.path || ''}`}
-               style={{ flex: 1, border: 'none', padding: '0 1rem', backgroundColor: 'transparent', color: 'inherit', outline: 'none', fontFamily: 'var(--font-mono)' }} 
+               readOnly={!isDevMode}
+               value={customUrl}
+               onChange={(e) => setCustomUrl(e.target.value)}
+               style={{ flex: 1, border: 'none', padding: '0 1rem', backgroundColor: isDevMode ? 'var(--pm-active)' : 'transparent', color: 'inherit', outline: 'none', fontFamily: 'var(--font-mono)' }} 
             />
             <button 
               onClick={handleSend}
@@ -248,28 +403,17 @@ export default function ClientView({ profile, skills, experience, projects }: Cl
           </div>
           
           {/* Request Pane Tabs */}
-          <div style={{ display: 'flex', gap: '2rem', marginTop: '1.5rem', borderBottom: '1px solid var(--pm-border)', paddingBottom: '0.75rem' }}>
-            <div style={{ paddingBottom: '0.75rem', marginBottom: '-0.75rem', borderBottom: '2px solid var(--accent-color)', fontWeight: 600, color: 'var(--text-main)', cursor: 'pointer' }}>Params</div>
-            <div style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Authorization</div>
-            <div style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Headers <span style={{ fontSize: '0.7rem', backgroundColor: 'var(--pm-active)', padding: '0 4px', borderRadius: '4px', marginLeft: '4px'}}>2</span></div>
-            <div style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Body</div>
+          <div style={{ display: 'flex', gap: '2rem', marginTop: '1.5rem', borderBottom: '1px solid var(--pm-border)' }}>
+            <div onClick={() => setReqTab('Params')} style={{ paddingBottom: '0.75rem', marginBottom: '-1px', borderBottom: reqTab === 'Params' ? '2px solid var(--accent-color)' : 'none', fontWeight: reqTab === 'Params' ? 600 : 400, color: reqTab === 'Params' ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer' }}>Params</div>
+            <div style={{ paddingBottom: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer' }}>Authorization</div>
+            <div onClick={() => setReqTab('Headers')} style={{ paddingBottom: '0.75rem', marginBottom: '-1px', borderBottom: reqTab === 'Headers' ? '2px solid var(--accent-color)' : 'none', fontWeight: reqTab === 'Headers' ? 600 : 400, color: reqTab === 'Headers' ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer' }}>Headers <span style={{ fontSize: '0.7rem', backgroundColor: 'var(--pm-active)', padding: '0 4px', borderRadius: '4px', marginLeft: '4px'}}>2</span></div>
+            <div style={{ paddingBottom: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer' }}>Body</div>
           </div>
           
-          {/* Params Table */}
+          {/* Params / Headers Table */}
           <div style={{ marginTop: '1rem' }}>
-            <h3 style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Query Params</h3>
-            <div style={{ border: '1px solid var(--pm-border)', borderRadius: '4px', overflow: 'hidden' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', borderBottom: '1px solid var(--pm-border)' }}>
-                <div style={{ padding: '0.5rem', borderRight: '1px solid var(--pm-border)', color: 'var(--text-muted)' }}>Key</div>
-                <div style={{ padding: '0.5rem', borderRight: '1px solid var(--pm-border)', color: 'var(--text-muted)' }}>Value</div>
-                <div style={{ padding: '0.5rem', color: 'var(--text-muted)' }}>Description</div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr' }}>
-                <div style={{ padding: '0.5rem', borderRight: '1px solid var(--pm-border)', opacity: 0.5 }}>key</div>
-                <div style={{ padding: '0.5rem', borderRight: '1px solid var(--pm-border)', opacity: 0.5 }}>value</div>
-                <div style={{ padding: '0.5rem', opacity: 0.5 }}>Description</div>
-              </div>
-            </div>
+            <h3 style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>{reqTab === 'Params' ? 'Query Params' : 'Headers'}</h3>
+            {reqTab === 'Params' ? renderEditableGrid(queryParams, handleParamChange) : renderEditableGrid(headers, handleHeaderChange)}
           </div>
         </div>
 
@@ -318,8 +462,25 @@ export default function ClientView({ profile, skills, experience, projects }: Cl
                 </div>
               </div>
             ) : hasFetched ? (
-              <div style={{ backgroundColor: 'var(--pm-workspace)', borderRadius: '6px', border: '1px solid var(--pm-border)', height: '100%' }}>
-                {renderHighlightedJson(currentData)}
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                {/* Visual vs Raw Tabs */}
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  <button 
+                    onClick={() => setResponseTab('raw')}
+                    style={{ padding: '0.4rem 1rem', borderRadius: '4px', border: 'none', backgroundColor: responseTab === 'raw' ? 'var(--pm-active)' : 'transparent', color: responseTab === 'raw' ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer', outline: 'none' }}
+                  >
+                    Raw JSON
+                  </button>
+                  <button 
+                    onClick={() => setResponseTab('visual')}
+                    style={{ padding: '0.4rem 1rem', borderRadius: '4px', border: 'none', backgroundColor: responseTab === 'visual' ? 'var(--pm-active)' : 'transparent', color: responseTab === 'visual' ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer', outline: 'none' }}
+                  >
+                    Visual Preview
+                  </button>
+                </div>
+                <div style={{ flex: 1, backgroundColor: 'var(--pm-workspace)', borderRadius: '6px', border: '1px solid var(--pm-border)', overflowY: 'auto' }}>
+                  {responseTab === 'raw' ? renderHighlightedJson(currentData) : renderVisualPreview()}
+                </div>
               </div>
             ) : (
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>

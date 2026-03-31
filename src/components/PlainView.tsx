@@ -1,4 +1,6 @@
 import { Profile, SkillCategory, Experience, Project } from '../types';
+import { FaJava, FaDocker, FaAws, FaReact, FaNodeJs, FaGit, FaPython, FaLinux, FaCode } from 'react-icons/fa';
+import { SiSpringboot, SiTypescript, SiJavascript, SiPostgresql, SiMongodb, SiRedis, SiKubernetes, SiApachekafka, SiGraphql, SiDotnet } from 'react-icons/si';
 
 interface PlainViewProps {
   profile: Profile | null;
@@ -8,13 +10,36 @@ interface PlainViewProps {
   loading: boolean;
 }
 
+const getIconForSkill = (skill: string) => {
+  const norm = skill.toLowerCase();
+  if (norm.includes('java') && !norm.includes('script')) return <FaJava style={{ fontSize: '1.2rem', color: '#e32c2e' }} />;
+  if (norm.includes('spring')) return <SiSpringboot style={{ fontSize: '1.2rem', color: '#6db33f' }} />;
+  if (norm.includes('aws')) return <FaAws style={{ fontSize: '1.2rem', color: '#ff9900' }} />;
+  if (norm.includes('docker')) return <FaDocker style={{ fontSize: '1.2rem', color: '#2496ed' }} />;
+  if (norm.includes('kubernetes') || norm.includes('k8s')) return <SiKubernetes style={{ fontSize: '1.2rem', color: '#326ce5' }} />;
+  if (norm.includes('react')) return <FaReact style={{ fontSize: '1.2rem', color: '#61dafb' }} />;
+  if (norm.includes('node')) return <FaNodeJs style={{ fontSize: '1.2rem', color: '#339933' }} />;
+  if (norm.includes('git')) return <FaGit style={{ fontSize: '1.2rem', color: '#f05032' }} />;
+  if (norm.includes('python')) return <FaPython style={{ fontSize: '1.2rem', color: '#3776ab' }} />;
+  if (norm.includes('linux')) return <FaLinux style={{ fontSize: '1.2rem' }} />;
+  if (norm.includes('type')) return <SiTypescript style={{ fontSize: '1.2rem', color: '#3178c6' }} />;
+  if (norm.includes('js') || norm.includes('javascript')) return <SiJavascript style={{ fontSize: '1.2rem', color: '#f7df1e' }} />;
+  if (norm.includes('postgre') || norm.includes('sql')) return <SiPostgresql style={{ fontSize: '1.2rem', color: '#336791' }} />;
+  if (norm.includes('mongo')) return <SiMongodb style={{ fontSize: '1.2rem', color: '#47a248' }} />;
+  if (norm.includes('redis')) return <SiRedis style={{ fontSize: '1.2rem', color: '#dc382d' }} />;
+  if (norm.includes('kafka')) return <SiApachekafka style={{ fontSize: '1.2rem' }} />;
+  if (norm.includes('graphql')) return <SiGraphql style={{ fontSize: '1.2rem', color: '#e10098' }} />;
+  if (norm.includes('net') || norm.includes('c#')) return <SiDotnet style={{ fontSize: '1.2rem', color: '#512bd4' }} />;
+  return <FaCode style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }} />;
+};
+
 export default function PlainView({ profile, skills, experience, projects, loading }: PlainViewProps) {
   return (
     <div className="plain-view-container">
       
       {/* About Section - Left 50% */}
-      <section id="about" className="w-full md:w-3/4 mr-auto min-h-screen flex flex-col justify-center p-8 break-words box-border">
-        <div>
+      <section id="about" className="w-full min-h-screen flex flex-col justify-center bg-transparent">
+        <div className="w-full md:w-3/4 mr-auto p-8 rounded-r-xl md:rounded-xl relative z-10 break-words box-border" style={{ backgroundColor: 'var(--bg-color)' }}>
           <h2 className="section-title">about</h2>
           {loading ? (
               <div>
@@ -43,8 +68,8 @@ export default function PlainView({ profile, skills, experience, projects, loadi
       </section>
 
       {/* Experience Section - Right 50% */}
-      <section id="experience" className="w-full md:w-3/4 ml-auto min-h-screen flex flex-col justify-center p-8 break-words box-border">
-        <div>
+      <section id="experience" className="w-full min-h-screen flex flex-col justify-center bg-transparent">
+        <div className="w-full md:w-3/4 ml-auto p-8 rounded-l-xl md:rounded-xl relative z-10 break-words box-border" style={{ backgroundColor: 'var(--bg-color)' }}>
           <h2 className="section-title">experience</h2>
           <div className="card-grid" style={{ gridTemplateColumns: '1fr', gap: '2rem' }}>
             {loading ? (
@@ -72,8 +97,8 @@ export default function PlainView({ profile, skills, experience, projects, loadi
       </section>
 
       {/* Skills Section - Left 50% */}
-      <section id="skills" className="w-full md:w-3/4 mr-auto min-h-screen flex flex-col justify-center p-8 break-words box-border">
-        <div>
+      <section id="skills" className="w-full min-h-screen flex flex-col justify-center bg-transparent">
+        <div className="w-full md:w-3/4 mr-auto p-8 rounded-r-xl md:rounded-xl relative z-10 break-words box-border" style={{ backgroundColor: 'var(--bg-color)' }}>
           <h2 className="section-title">skills</h2>
           <div className="card-grid" style={{ gap: '1.5rem' }}>
             {loading ? (
@@ -86,9 +111,29 @@ export default function PlainView({ profile, skills, experience, projects, loadi
             ) : skills?.map((category, idx) => (
               <div key={idx} className="item-card break-words" style={{ padding: '1.5rem', boxShadow: '0 6px 20px rgba(0,0,0,0.05)' }}>
                 <h3 className="item-title" style={{ color: 'var(--text-main)', fontSize: '1.1rem', marginBottom: '1.5rem' }}>{category.category}</h3>
-                <div className="badge-container" style={{ gap: '0.5rem' }}>
+                <div className="badge-container" style={{ gap: '0.75rem' }}>
                   {category.items.map(item => (
-                    <span key={item} className="badge break-words" style={{ padding: '0.3rem 0.8rem', fontSize: '0.85rem' }}>{item}</span>
+                    <div 
+                      key={item} 
+                      className="break-words" 
+                      style={{ 
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.4rem 0.8rem', 
+                        fontSize: '0.85rem',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '9999px',
+                        background: 'transparent',
+                        transition: 'background-color 0.2s ease',
+                        cursor: 'default'
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--component-bg)'}
+                      onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      {getIconForSkill(item)}
+                      <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>{item}</span>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -98,8 +143,8 @@ export default function PlainView({ profile, skills, experience, projects, loadi
       </section>
 
       {/* Projects Section - Right 50% */}
-      <section id="projects" className="w-full md:w-3/4 ml-auto min-h-screen flex flex-col justify-center p-8 break-words box-border">
-        <div>
+      <section id="projects" className="w-full min-h-screen flex flex-col justify-center bg-transparent pb-32">
+        <div className="w-full md:w-3/4 ml-auto p-8 rounded-l-xl md:rounded-xl relative z-10 break-words box-border" style={{ backgroundColor: 'var(--bg-color)' }}>
           <h2 className="section-title">projects</h2>
           <div className="card-grid" style={{ gap: '2rem' }}>
             {loading ? (
