@@ -233,7 +233,7 @@ export default function DocsView() {
                       <table className="swagger-params-table">
                         <thead>
                           <tr>
-                            <th width="20%">Name</th>
+                            <th style={{ width: '20%' }}>Name</th>
                             <th>Description</th>
                           </tr>
                         </thead>

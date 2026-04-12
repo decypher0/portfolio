@@ -9,7 +9,7 @@ interface ViewModeContextType {
 const ViewModeContext = createContext<ViewModeContextType | undefined>(undefined);
 
 export function ViewModeProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<ViewMode>('terminal');
+  const [mode, setMode] = useState<ViewMode>('plain');
 
   return (
     <ViewModeContext.Provider value={{ mode, setMode }}>

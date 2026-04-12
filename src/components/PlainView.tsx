@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Profile, SkillCategory, Experience, Project } from '../types';
 import { FaJava, FaDocker, FaAws, FaReact, FaNodeJs, FaGit, FaPython, FaLinux, FaCode } from 'react-icons/fa';
 import { SiSpringboot, SiTypescript, SiJavascript, SiPostgresql, SiMongodb, SiRedis, SiKubernetes, SiApachekafka, SiGraphql, SiDotnet } from 'react-icons/si';
@@ -34,6 +35,26 @@ const getIconForSkill = (skill: string) => {
 };
 
 export default function PlainView({ profile, skills, experience, projects, loading }: PlainViewProps) {
+  useEffect(() => {
+    if (loading) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+    );
+
+    document.querySelectorAll('.animate-on-scroll').forEach((el) => {
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [loading]);
+
   return (
     <div className="plain-view-container">
       
@@ -48,7 +69,7 @@ export default function PlainView({ profile, skills, experience, projects, loadi
                 <div className="skeleton skeleton-text" style={{ width: '95%', height: '1.2rem' }}></div>
               </div>
           ) : (
-            <div>
+            <div className="animate-on-scroll">
               <p className="whitespace-normal break-words" style={{ fontSize: '1.2rem', color: 'var(--text-main)', lineHeight: '1.9', letterSpacing: '0.2px', marginBottom: '2rem' }}>
                 {profile?.summary}
               </p>
@@ -56,11 +77,6 @@ export default function PlainView({ profile, skills, experience, projects, loadi
               <div style={{ padding: '2rem', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
                 <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem', fontFamily: 'var(--font-mono)' }}>Education Timeline</h3>
                 <p className="whitespace-normal break-words" style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: '1.6' }}>{profile?.education}</p>
-              </div>
-              
-              <div className="badge-container" style={{ gap: '1rem' }}>
-                <span className="badge break-words" style={{ padding: '0.5rem 1rem', background: 'transparent', borderColor: 'var(--border-color)', fontSize: '0.9rem' }}>{profile?.email}</span>
-                <span className="badge break-words" style={{ padding: '0.5rem 1rem', background: 'transparent', borderColor: 'var(--border-color)', fontSize: '0.9rem' }}>{profile?.phone}</span>
               </div>
             </div>
           )}
@@ -77,8 +93,8 @@ export default function PlainView({ profile, skills, experience, projects, loadi
                 <div className="item-card skeleton skeleton-card"></div>
                 <div className="item-card skeleton skeleton-card"></div>
               </>
-            ) : experience?.map(exp => (
-              <div key={exp.id} className="item-card" style={{ padding: '2rem', boxShadow: '0 6px 20px rgba(0,0,0,0.05)' }}>
+            ) : experience?.map((exp, idx) => (
+              <div key={exp.id} className="item-card animate-on-scroll" style={{ padding: '2rem', boxShadow: '0 6px 20px rgba(0,0,0,0.05)', transitionDelay: `${idx * 0.1}s` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                   <h3 className="item-title break-words" style={{ fontSize: '1.3rem', marginBottom: 0 }}>
                     {exp.role} <span style={{ color: '#f97316' }}>@ {exp.company}</span>
@@ -109,7 +125,7 @@ export default function PlainView({ profile, skills, experience, projects, loadi
                 <div className="item-card skeleton skeleton-card"></div>
               </>
             ) : skills?.map((category, idx) => (
-              <div key={idx} className="item-card break-words" style={{ padding: '1.5rem', boxShadow: '0 6px 20px rgba(0,0,0,0.05)' }}>
+              <div key={idx} className="item-card break-words animate-on-scroll" style={{ padding: '1.5rem', boxShadow: '0 6px 20px rgba(0,0,0,0.05)', transitionDelay: `${idx * 0.1}s` }}>
                 <h3 className="item-title" style={{ color: 'var(--text-main)', fontSize: '1.1rem', marginBottom: '1.5rem' }}>{category.category}</h3>
                 <div className="badge-container" style={{ gap: '0.75rem' }}>
                   {category.items.map(item => (
@@ -152,8 +168,8 @@ export default function PlainView({ profile, skills, experience, projects, loadi
                  <div className="item-card skeleton skeleton-card"></div>
                  <div className="item-card skeleton skeleton-card"></div>
                </>
-            ) : projects?.map(proj => (
-              <div key={proj.id} className="item-card break-words" style={{ display: 'flex', flexDirection: 'column', padding: '2rem', boxShadow: '0 6px 20px rgba(0,0,0,0.05)' }}>
+            ) : projects?.map((proj, idx) => (
+              <div key={proj.id} className="item-card break-words animate-on-scroll" style={{ display: 'flex', flexDirection: 'column', padding: '2rem', boxShadow: '0 6px 20px rgba(0,0,0,0.05)', transitionDelay: `${idx * 0.1}s` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
                   <h3 className="item-title break-words" style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>{proj.title}</h3>
                   {proj.date && <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{proj.date}</span>}

@@ -6,7 +6,9 @@ export const profileData: Profile = {
   summary: "Architecting software solutions with a focus on scalable backends and highly interactive user interfaces. Passionate about system design, code quality, and performance monitoring.",
   email: "john.doe@example.com",
   github: "https://github.com/johndoe",
-  linkedin: "https://linkedin.com/in/johndoe"
+  linkedin: "https://linkedin.com/in/johndoe",
+  phone: "",
+  education: ""
 };
 
 export const skillsData: SkillCategory[] = [

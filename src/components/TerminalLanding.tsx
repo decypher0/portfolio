@@ -1,37 +1,70 @@
 import { useState, useEffect, useRef } from 'react';
 import { useViewMode } from '../context/ViewModeContext';
+import { FaLinkedin, FaGithub, FaEnvelope } from 'react-icons/fa';
 
 interface TerminalLine {
   id: string;
   text: string;
   isCommand?: boolean;
+  element?: React.ReactNode;
 }
+
+// Syntax highlighting logic
+const formatTerminalText = (text: string) => {
+  if (!text) return null;
+  
+  // Split text by matching exactly our target keywords while capturing them
+  const parts = text.split(/(Gaurav|'help'|'Hi'|>)/g);
+  
+  return parts.map((part, index) => {
+    if (!part) return null;
+    if (part === 'Gaurav') return <span key={index} style={{ color: 'var(--accent-color)' }}>{part}</span>;
+    if (part === "'help'" || part === "'Hi'") return <span key={index} style={{ color: 'var(--term-keyword)' }}>{part}</span>;
+    if (part === '>') return <span key={index} style={{ color: 'var(--term-prompt)' }}>{part}</span>;
+    return <span key={index} style={{ color: 'var(--term-text)' }}>{part}</span>;
+  });
+};
+
+const TypewriterText = ({ text, renderElement }: { text: string, renderElement?: React.ReactNode }) => {
+  const [displayed, setDisplayed] = useState('');
+  const [isDone, setIsDone] = useState(false);
+  
+  useEffect(() => {
+    if (!text) {
+      setIsDone(true);
+      return;
+    }
+    let i = 0;
+    const interval = setInterval(() => {
+      setDisplayed(text.substring(0, i));
+      i++;
+      if (i > text.length) {
+        clearInterval(interval);
+        setIsDone(true);
+      }
+    }, 15);
+    return () => clearInterval(interval);
+  }, [text]);
+  
+  return (
+    <span style={{ display: 'inline-block', width: '100%' }}>
+      {formatTerminalText(displayed)}
+      {text && !isDone && <span className="logo-cursor" style={{ background: 'var(--term-text)' }}></span>}
+      {isDone && renderElement}
+    </span>
+  );
+};
 
 export default function TerminalLanding() {
   const { setMode } = useViewMode();
   const [history, setHistory] = useState<TerminalLine[]>([]);
   const [input, setInput] = useState('');
   const [typingText, setTypingText] = useState('');
+  const [terminalContext, setTerminalContext] = useState<'main' | 'socials'>('main');
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const welcomeMessage = "> Hey, I am Gaurav. Thanks for visiting. Type 'help' or 'Hi' for options.";
-
-  // Syntax highlighting logic
-  const formatTerminalText = (text: string) => {
-    if (!text) return null;
-    
-    // Split text by matching exactly our target keywords while capturing them
-    const parts = text.split(/(Gaurav|'help'|'Hi'|>)/g);
-    
-    return parts.map((part, index) => {
-      if (!part) return null;
-      if (part === 'Gaurav') return <span key={index} style={{ color: 'var(--accent-color)' }}>{part}</span>;
-      if (part === "'help'" || part === "'Hi'") return <span key={index} style={{ color: 'var(--term-keyword)' }}>{part}</span>;
-      if (part === '>') return <span key={index} style={{ color: 'var(--term-prompt)' }}>{part}</span>;
-      return <span key={index} style={{ color: 'var(--term-text)' }}>{part}</span>;
-    });
-  };
 
   // Initial typing effect
   useEffect(() => {
@@ -71,33 +104,141 @@ export default function TerminalLanding() {
       };
       
       const newHistory = [...history, newCommand];
-      const lowerCmd = cmd.toLowerCase();
+      const parts = cmd.split(' ').filter(Boolean);
+      const lowerCmd = parts.length > 0 ? parts[0].toLowerCase().trim() : '';
+      const arg1 = parts.length > 1 ? parts[1].toLowerCase().trim() : '';
 
-      if (lowerCmd === 'help' || lowerCmd === 'hi') {
-        newHistory.push({ id: Date.now() + '1', text: "1. About" });
-        newHistory.push({ id: Date.now() + '2', text: "2. Experience" });
-        newHistory.push({ id: Date.now() + '3', text: "3. Skills" });
-        newHistory.push({ id: Date.now() + '4', text: "4. Projects" });
-        newHistory.push({ id: Date.now() + '5', text: "> Enter a number to navigate:" });
-      } else if (['1', '2', '3', '4'].includes(cmd)) {
-        // Handle navigation
+      if (lowerCmd === 'clear') {
+        setHistory([]);
+        setInput('');
+        return;
+      }
+
+      if (terminalContext === 'socials') {
+        if (lowerCmd === 'a') {
+           window.open('https://www.linkedin.com/in/gaurav-habad-2aa064131/', '_blank');
+           newHistory.push({ id: Date.now() + 'o', text: "> Opening LinkedIn..." });
+           setTerminalContext('main');
+        } else if (lowerCmd === 'b') {
+           window.open('https://github.com/decypher0', '_blank');
+           newHistory.push({ id: Date.now() + 'o', text: "> Opening GitHub..." });
+           setTerminalContext('main');
+        } else if (lowerCmd === 'c') {
+           window.open('mailto:gauravhabad113@gmail.com', '_blank');
+           newHistory.push({ id: Date.now() + 'o', text: "> Opening Email client..." });
+           setTerminalContext('main');
+        } else if (lowerCmd === 'back' || lowerCmd === 'exit') {
+           newHistory.push({ id: Date.now() + 'o', text: "> Returning to main menu. Type 'help' for options." });
+           setTerminalContext('main');
+        } else {
+           newHistory.push({ id: Date.now() + 'e', text: "> Invalid option. Type a, b, c, or 'back'." });
+        }
+        setHistory(newHistory);
+        setInput('');
+        return;
+      }
+
+      if (lowerCmd === 'pwd') {
+        newHistory.push({ id: Date.now() + 'pwd', text: "/users/gaurav/portfolio" });
+      } else if (lowerCmd === 'ls') {
+        newHistory.push({ id: Date.now() + 'ls', text: '', element: (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '8px', color: 'var(--term-keyword)', marginTop: '8px', marginBottom: '8px' }}>
+            <div>About</div>
+            <div>Experience</div>
+            <div>Skills</div>
+            <div>Projects</div>
+            <div>Socials</div>
+          </div>
+        )});
+      } else if (lowerCmd === 'whoami') {
+        newHistory.push({ id: Date.now() + 'whoami', text: "A brief professional bio: Senior Backend Developer crafting robust and distributed systems." });
+      } else if (lowerCmd === 'date') {
+        newHistory.push({ id: Date.now() + 'date', text: new Date().toString() });
+      } else if (lowerCmd === 'help') {
+        newHistory.push({ id: Date.now() + 'h1', text: "> Available commands:" });
+        newHistory.push({ id: Date.now() + 'h2', text: "  ls       - Lists available sections" });
+        newHistory.push({ id: Date.now() + 'h3', text: "  pwd      - Displays current path" });
+        newHistory.push({ id: Date.now() + 'h4', text: "  cd [sec] - Navigates to a section" });
+        newHistory.push({ id: Date.now() + 'h5', text: "  whoami   - View bio" });
+        newHistory.push({ id: Date.now() + 'h6', text: "  clear    - Wipes terminal" });
+        newHistory.push({ id: Date.now() + 'h7', text: "  socials  - Open socials menu" });
+      } else if (lowerCmd === 'hi' || lowerCmd === 'hello') {
+        newHistory.push({ id: Date.now() + 'hi', text: "> Hello there! Type 'help' to see commands." });
+      } else if (['1', '2', '3', '4', 'about', 'experience', 'skills', 'projects'].includes(lowerCmd)) {
         setMode('plain');
         const sectionMap: Record<string, string> = {
-          '1': 'about',
-          '2': 'experience',
-          '3': 'skills',
-          '4': 'projects'
+          '1': 'about', 'about': 'about',
+          '2': 'experience', 'experience': 'experience',
+          '3': 'skills', 'skills': 'skills',
+          '4': 'projects', 'projects': 'projects'
         };
-        
         setTimeout(() => {
-          document.getElementById(sectionMap[cmd])?.scrollIntoView({ behavior: 'smooth' });
+          document.getElementById(sectionMap[lowerCmd])?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
         return;
-      } else {
-        newHistory.push({ 
-          id: Date.now() + 'err', 
-          text: "> Command not found. Type 'help' for options." 
+      } else if (lowerCmd === 'cd') {
+        if (!arg1) {
+          newHistory.push({ id: Date.now() + 'cd', text: "> cd: missing argument. Try 'cd About'" });
+        } else {
+          const sectionMap: Record<string, string> = {
+            'about': 'about',
+            'experience': 'experience',
+            'skills': 'skills',
+            'projects': 'projects'
+          };
+          if (arg1 === 'socials') {
+            newHistory.push({ id: Date.now() + 's1', text: "Select a social: [a] LinkedIn, [b] GitHub, [c] Email" });
+            newHistory.push({
+               id: Date.now() + 's2',
+               text: '',
+               element: (
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px', marginBottom: '8px' }}>
+                   <div><span style={{ color: 'var(--term-keyword)' }}>[a]</span> <FaLinkedin style={{ verticalAlign: 'middle', marginRight: '8px', fontSize: '1.2rem' }}/> LinkedIn</div>
+                   <div><span style={{ color: 'var(--term-keyword)' }}>[b]</span> <FaGithub style={{ verticalAlign: 'middle', marginRight: '8px', fontSize: '1.2rem' }}/> GitHub</div>
+                   <div><span style={{ color: 'var(--term-keyword)' }}>[c]</span> <FaEnvelope style={{ verticalAlign: 'middle', marginRight: '8px', fontSize: '1.2rem' }}/> Email</div>
+                 </div>
+               )
+            });
+            newHistory.push({ id: Date.now() + 's3', text: "> Enter your choice (a/b/c) or 'back' to return:" });
+            setTerminalContext('socials');
+          } else if (sectionMap[arg1]) {
+             setMode('plain');
+             setTimeout(() => {
+               document.getElementById(sectionMap[arg1])?.scrollIntoView({ behavior: 'smooth' });
+             }, 100);
+             newHistory.push({ id: Date.now() + 'cdd', text: `> Navigated to ${arg1}` });
+          } else {
+             newHistory.push({ id: Date.now() + 'cde', text: `> cd: ${arg1}: No such section` });
+          }
+        }
+      } else if (lowerCmd === '5' || lowerCmd === 'socials') {
+        newHistory.push({ id: Date.now() + 's1', text: "Select a social: [a] LinkedIn, [b] GitHub, [c] Email" });
+        newHistory.push({
+           id: Date.now() + 's2',
+           text: '',
+           element: (
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px', marginBottom: '8px' }}>
+               <div><span style={{ color: 'var(--term-keyword)' }}>[a]</span> <FaLinkedin style={{ verticalAlign: 'middle', marginRight: '8px', fontSize: '1.2rem' }}/> LinkedIn</div>
+               <div><span style={{ color: 'var(--term-keyword)' }}>[b]</span> <FaGithub style={{ verticalAlign: 'middle', marginRight: '8px', fontSize: '1.2rem' }}/> GitHub</div>
+               <div><span style={{ color: 'var(--term-keyword)' }}>[c]</span> <FaEnvelope style={{ verticalAlign: 'middle', marginRight: '8px', fontSize: '1.2rem' }}/> Email</div>
+             </div>
+           )
         });
+        newHistory.push({ id: Date.now() + 's3', text: "> Enter your choice (a/b/c) or 'back' to return:" });
+        setTerminalContext('socials');
+      } else {
+        const validCommands = ['pwd', 'ls', 'whoami', 'date', 'help', 'cd', 'about', 'experience', 'skills', 'projects', 'socials', 'clear', 'hi', 'hello'];
+        let bestMatch = '';
+        validCommands.forEach(vc => {
+          if (vc.startsWith(lowerCmd) || lowerCmd.startsWith(vc)) {
+            bestMatch = vc;
+          }
+        });
+        if (bestMatch && bestMatch.length > 1) {
+          newHistory.push({ id: Date.now() + 'err', text: `> Command not found: ${cmd}. Did you mean '${bestMatch}'?` });
+        } else {
+          newHistory.push({ id: Date.now() + 'err', text: `> Command not found: ${cmd}. Type 'help' for options.` });
+        }
       }
 
       setHistory(newHistory);
@@ -190,7 +331,9 @@ export default function TerminalLanding() {
                   <span style={{ color: 'var(--term-prompt)', marginRight: '0.5rem' }}>{'>'}</span>
                   {line.text.replace('> ', '')}
                 </>
-              ) : formatTerminalText(line.text)}
+              ) : (
+                <TypewriterText text={line.text} renderElement={line.element} />
+              )}
             </div>
           ))}
 

@@ -33,4 +33,4 @@ export interface Project {
   liveLink?: string;
 }
 
-export type ViewMode = 'terminal' | 'plain' | 'client' | 'docs';
+export type ViewMode = 'plain' | 'client' | 'docs';
